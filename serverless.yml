@@ -1,11 +1,11 @@
 service: sqs-lambda-tutorial
 
 custom:
-  queueName: TutorialSQS
+  queueName: TutorialSQS.fifo
 
 provider:
   name: aws
-  runtime: python3.6
+  runtime: python3.8
   stage: production
   region: eu-west-1
 
@@ -16,10 +16,19 @@ provider:
       Resource:
         Fn::GetAtt: [ SQSQueue, Arn ]
 
+plugins:
+  - serverless-offline
+
+package:
+  exclude:
+    - node_modules/**
+    - venv/**
 
 functions:
   start-lambda:
     handler: handler.start
+    events:
+      - schedule: rate(2 minutes)
     environment:
       SQS_URL:
         Ref: SQSQueue
@@ -36,3 +45,5 @@ resources:
       Type: AWS::SQS::Queue
       Properties:
         QueueName: ${self:custom.queueName}
+        ContentBasedDeduplication: true
+        FifoQueue: true
